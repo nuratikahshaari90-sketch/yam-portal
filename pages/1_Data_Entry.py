@@ -45,13 +45,16 @@ JABATAN_BY_DIV = {
         "Daie Lapangan",
     ],
     "Enterprise": [
-        "Qurban (Lembu/Kambing/Unta)",
+        "Qurban (Lembu/Kambing/Unta)",+= [
+    "Waqaf Quran",
     ],
     "Outreach": [
         "Ziarah Mahabbah",
         "Masjid/Surau/Komuniti",
         "Cawangan Negeri",
-        "Pemasaran/Media/Fundraising",
+        "Pemasaran/Media/Fundraising", += [
+    "Warung Makan Sahabat — Sarapan",
+    "Warung Makan Sahabat — Tengah Hari",
     ],
 }
 
@@ -81,10 +84,13 @@ CALC_CHOICES = {
         "Manual",
     ],
     "Enterprise": [
-        "Qurban (Lembu/Kambing/Unta)",
+        "Qurban (Lembu/Kambing/Unta)", += [
+    "Waqaf Quran",
         "Manual",
     ],
-    "Outreach": ["Manual"],
+    "Outreach": ["Manual"],+= [
+    "Warung Makan Sahabat — Sarapan",
+    "Warung Makan Sahabat — Tengah Hari",
 }
 
 # Default calculator by Jabatan (so Program auto-fills when Jabatan changes)
@@ -108,6 +114,10 @@ DEFAULT_METHOD_BY_JAB = {
     "PDS (Pelajar)": "PDS (Pelajar)",
     # Enterprise
     "Qurban (Lembu/Kambing/Unta)": "Qurban (Lembu/Kambing/Unta)",
+    "Waqaf Quran": "Waqaf Quran"
+    # Outreach
+    "Warung Makan Sahabat — Sarapan": "Warung Makan Sahabat — Sarapan"
+    "Warung Makan Sahabat — Tengah Hari": "Warung Makan Sahabat — Tengah Hari"
 }
 
 FIVE_STATES = {"Selangor","Perak","Wilayah Persekutuan Kuala Lumpur","Negeri Sembilan","Melaka","Johor","Pulau Pinang"}
@@ -244,7 +254,19 @@ elif prog == "Qurban (Lembu/Kambing/Unta)":
     ekor  = st.number_input("Jumlah ekor", min_value=0, step=1, value=0)
     factor = {"Lembu":500,"Kambing":70,"Unta":600}[qtype]
     benef = ekor * factor
-
+    
+elif prog == "Waqaf Quran":
+    naskhah = st.number_input("Jumlah naskhah Al-Quran", min_value=0, step=1, value=0)
+    benef = naskhah * 6  # setiap naskhah diandaikan 6 penerima manfaat
+# OUTREACH
+elif prog == "Warung Makan Sahabat — Sarapan":
+    pek_per_hari = st.number_input("Jumlah pek (per hari)", min_value=0, step=1, value=0)
+    benef = pek_per_hari * 26 * 12  # 26 hari x 12 bulan
+    
+elif prog == "Warung Makan Sahabat — Tengah Hari":
+    pek_per_hari = st.number_input("Jumlah pek (per hari)", min_value=0, step=1, value=0)
+    benef = pek_per_hari * 26 * 12  # 26 hari x 12 bulan
+    
 else:  # Manual / default
     benef = st.number_input("Bilangan Penerima Manfaat (manual)", min_value=0, step=1, value=0)
 
