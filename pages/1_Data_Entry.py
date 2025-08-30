@@ -9,13 +9,14 @@ st.title("Data Entry — YAM Beneficiaries (Auto-Calc)")
 @st.cache_data
 def load_lists():
     divisyen = pd.read_csv("data/divisyen.csv")["Divisyen"].tolist()
-    jabatan  = pd.read_csv("data/jabatan.csv")["Jabatan"].tolist()
     negeri   = pd.read_csv("data/negeri.csv")["Negeri/Pusat"].tolist()
-    return divisyen, jabatan, negeri
+    # We don’t use the raw jabatan.csv directly; we’ll drive Jabatan by Divisyen below
+    return divisyen, negeri
 
-div_list, jab_list_all, neg_list = load_lists()
+div_list, neg_list = load_lists()
 
-# ----- CONFIG: map Divisyen -> allowed Jabatan & calculator options -----
+# ---------- CONFIG ----------
+# Which Jabatan are valid for each Divisyen
 JABATAN_BY_DIV = {
     "Disaster Management": [
         "Dapur Rakyat",
@@ -54,6 +55,7 @@ JABATAN_BY_DIV = {
     ],
 }
 
+# Calculator choices per Divisyen
 CALC_CHOICES = {
     "Disaster Management": [
         "Dapur Rakyat",
@@ -85,13 +87,39 @@ CALC_CHOICES = {
     "Outreach": ["Manual"],
 }
 
+# Default calculator by Jabatan (so Program auto-fills when Jabatan changes)
+DEFAULT_METHOD_BY_JAB = {
+    # Disaster
+    "Dapur Rakyat": "Dapur Rakyat",
+    "Pek Barangan Asas (Dalam Negara)": "Pek Barangan Asas (Dalam Negara)",
+    "Pek Barangan Asas (Luar Negara)": "Pek Barangan Asas (Luar Negara)",
+    "Shelter (Dalam Negara)": "Shelter (Dalam Negara)",
+    "Shelter (Luar Negara)": "Shelter (Luar Negara)",
+    "Rumah Transit": "Rumah Transit",
+    # Humanitarian
+    "Ambulans (Kes Biasa)": "Ambulans (Kes Biasa)",
+    "Ambulans (Standby Event)": "Ambulans (Standby Event)",
+    "Amal Doctor — Derma Darah": "Amal Doctor — Derma Darah",
+    "Amal Doctor — Khatan": "Amal Doctor — Khatan",
+    "Amal Doctor — Umum": "Amal Doctor — Umum",
+    "AMAL Water4Life": "AMAL Water4Life",
+    # H&T
+    "Tadika AMAL": "Tadika AMAL",
+    "PDS (Pelajar)": "PDS (Pelajar)",
+    # Enterprise
+    "Qurban (Lembu/Kambing/Unta)": "Qurban (Lembu/Kambing/Unta)",
+}
+
 FIVE_STATES = {"Selangor","Perak","Wilayah Persekutuan Kuala Lumpur","Negeri Sembilan","Melaka","Johor","Pulau Pinang"}
 def five_or_seven(state: str) -> int:
     return 5 if state in FIVE_STATES else 7
 
 def ensure_csv_with_headers():
-    headers = ["Timestamp","Divisyen","Jabatan","Negeri/Pusat","Aktiviti","PIC","Lokasi",
-               "Bilangan Penerima Manfaat","Belanjawan yang dikeluarkan"]
+    headers = [
+        "Timestamp","Divisyen","Jabatan","Program (Kaedah)",
+        "Negeri/Pusat","Aktiviti","PIC","Lokasi",
+        "Bilangan Penerima Manfaat","Belanjawan yang dikeluarkan"
+    ]
     if not os.path.exists(DATA_FILE):
         pd.DataFrame(columns=headers).to_csv(DATA_FILE, index=False)
 
@@ -100,155 +128,148 @@ def append_row(row: dict):
     df = pd.concat([df, pd.DataFrame([row])], ignore_index=True)
     df.to_csv(DATA_FILE, index=False)
 
-# ---------- STEP 1: pick context (outside the form so UI refreshes immediately) ----------
-st.subheader("Langkah 1 — Pilih konteks")
-colA, colB, colC = st.columns(3)
-with colA:
-    div = st.selectbox("Divisyen", div_list, key="divisyen")
-with colB:
-    neg = st.selectbox("Negeri/Pusat", neg_list, key="negeri")
-with colC:
-    calc_options = CALC_CHOICES.get(div, ["Manual"])
-    calc_method = st.selectbox("Kaedah Pengiraan (Program)", calc_options, key="calc_method")
+# ---------- UI (reactive; no st.form so it updates live) ----------
 
-# Filter Jabatan based on Divisyen
+# 1) Context
+c1, c2, c3 = st.columns(3)
+with c1:
+    div = st.selectbox("Divisyen", div_list, key="div")
+with c2:
+    neg = st.selectbox("Negeri/Pusat", neg_list, key="neg")
+with c3:
+    belanjawan = st.number_input("Belanjawan yang dikeluarkan (RM)", min_value=0.0, step=0.5, value=0.0, format="%.2f", key="budget")
+
+# 2) Jabatan depends on Divisyen
 jab_options = JABATAN_BY_DIV.get(div, [])
-# (Optional) merge with any extra labels from CSV that match the divisyen pattern if you want
-if not jab_options:
-    jab_options = jab_list_all  # fallback to all
+# Reset jabatan/program when Divisyen changes
+if "last_div" not in st.session_state or st.session_state["last_div"] != div:
+    st.session_state["jab"] = jab_options[0] if jab_options else ""
+    # set default program based on jabatan
+    prog_default = DEFAULT_METHOD_BY_JAB.get(st.session_state["jab"], CALC_CHOICES.get(div, ["Manual"])[0])
+    st.session_state["prog"] = prog_default
+    st.session_state["last_div"] = div
 
-# ---------- STEP 2: the actual form ----------
-st.subheader("Langkah 2 — Isi maklumat & kiraan")
-with st.form("beneficiary_form"):
-    c1, c2 = st.columns(2)
-    with c1:
-        jab = st.selectbox("Jabatan/Program (label organisasi)", jab_options, key="jabatan")
-        lokasi = st.text_input("Lokasi")
-    with c2:
-        aktiviti = st.text_input("Aktiviti (nama program / deskripsi ringkas)")
-        pic = st.text_input("PIC (nama atau email)")
-        belanjawan = st.number_input("Belanjawan yang dikeluarkan (RM)", min_value=0.0, step=0.5, value=0.0, format="%.2f")
+jab = st.selectbox("Jabatan (mengikut Divisyen)", jab_options, key="jab")
 
-    st.divider()
-    st.subheader("Auto-Calculation Inputs")
+# 3) Program auto-updates when Jabatan changes
+prog_options = CALC_CHOICES.get(div, ["Manual"])
+prog_auto = DEFAULT_METHOD_BY_JAB.get(jab, prog_options[0])
+if "last_jab" not in st.session_state or st.session_state["last_jab"] != jab:
+    st.session_state["prog"] = prog_auto if prog_auto in prog_options else prog_options[0]
+    st.session_state["last_jab"] = jab
 
-    # ---- calculators ----
-    benef = 0
+prog = st.selectbox("Program (Kaedah Pengiraan)", prog_options, index=prog_options.index(st.session_state["prog"]))
 
-    # DISASTER
-    if calc_method == "Dapur Rakyat":
-        packs = st.number_input("Jumlah pek/hidangan", min_value=0, step=1, value=0)
-        days  = st.number_input("Bilangan hari", min_value=0, step=1, value=0)
-        benef = packs * 1 * days
+# 4) General info
+c4, c5 = st.columns(2)
+with c4:
+    aktiviti = st.text_input("Aktiviti (nama/deskripsi)")
+    lokasi   = st.text_input("Lokasi")
+with c5:
+    pic      = st.text_input("PIC (nama atau email)")
 
-    elif calc_method == "Pek Barangan Asas (Dalam Negara)":
-        packs = st.number_input("Jumlah pek (dalam negara)", min_value=0, step=1, value=0)
-        benef = packs * five_or_seven(neg) * 7
+st.divider()
+st.subheader("Auto-Calculation Inputs")
 
-    elif calc_method == "Pek Barangan Asas (Luar Negara)":
-        packs = st.number_input("Jumlah pek (luar negara)", min_value=0, step=1, value=0)
-        days  = st.number_input("Anggaran bilangan hari", min_value=0, step=1, value=0)
-        benef = packs * 7 * days
+# 5) Calculator — show inputs based on Program
+benef = 0
 
-    elif calc_method == "Shelter (Dalam Negara)":
-        tents = st.number_input("Jumlah khemah", min_value=0, step=1, value=0)
-        days  = st.number_input("Jumlah hari", min_value=0, step=1, value=0)
-        benef = tents * 5 * days
+# DISASTER
+if prog == "Dapur Rakyat":
+    packs = st.number_input("Jumlah pek/hidangan", min_value=0, step=1, value=0)
+    days  = st.number_input("Bilangan hari", min_value=0, step=1, value=0)
+    benef = packs * 1 * days
 
-    elif calc_method == "Shelter (Luar Negara)":
-        tents = st.number_input("Jumlah khemah", min_value=0, step=1, value=0)
-        days  = st.number_input("Jumlah hari", min_value=0, step=1, value=0)
-        benef = tents * 10 * days
+elif prog == "Pek Barangan Asas (Dalam Negara)":
+    packs = st.number_input("Jumlah pek (dalam negara)", min_value=0, step=1, value=0)
+    benef = packs * five_or_seven(neg) * 7
 
-    elif calc_method == "Rumah Transit":
-        family = st.number_input("Jumlah isi keluarga", min_value=0, step=1, value=0)
-        days   = st.number_input("Jumlah hari", min_value=0, step=1, value=0)
-        benef = family * days
+elif prog == "Pek Barangan Asas (Luar Negara)":
+    packs = st.number_input("Jumlah pek (luar negara)", min_value=0, step=1, value=0)
+    days  = st.number_input("Anggaran bilangan hari", min_value=0, step=1, value=0)
+    benef = packs * 7 * days
 
-    # HUMANITARIAN
-    elif calc_method == "Ambulans (Kes Biasa)":
-        patients = st.number_input("Jumlah pesakit", min_value=0, step=1, value=0)
-        benef = patients * five_or_seven(neg)
+elif prog == "Shelter (Dalam Negara)":
+    tents = st.number_input("Jumlah khemah", min_value=0, step=1, value=0)
+    days  = st.number_input("Jumlah hari", min_value=0, step=1, value=0)
+    benef = tents * 5 * days
 
-    elif calc_method == "Ambulans (Standby Event)":
-        crowd = st.number_input("Anggaran crowd program", min_value=0, step=1, value=0)
-        benef = int(crowd * 0.60)
+elif prog == "Shelter (Luar Negara)":
+    tents = st.number_input("Jumlah khemah", min_value=0, step=1, value=0)
+    days  = st.number_input("Jumlah hari", min_value=0, step=1, value=0)
+    benef = tents * 10 * days
 
-    elif calc_method == "Amal Doctor — Derma Darah":
-        bags = st.number_input("Jumlah beg darah", min_value=0, step=1, value=0)
-        benef = bags * 3 * five_or_seven(neg)
+elif prog == "Rumah Transit":
+    family = st.number_input("Jumlah isi keluarga", min_value=0, step=1, value=0)
+    days   = st.number_input("Jumlah hari", min_value=0, step=1, value=0)
+    benef = family * days
 
-    elif calc_method == "Amal Doctor — Khatan":
-        participants = st.number_input("Jumlah peserta", min_value=0, step=1, value=0)
-        benef = participants * 3
+# HUMANITARIAN
+elif prog == "Ambulans (Kes Biasa)":
+    patients = st.number_input("Jumlah pesakit", min_value=0, step=1, value=0)
+    benef = patients * five_or_seven(neg)
 
-    elif calc_method == "Amal Doctor — Umum":
-        patients = st.number_input("Jumlah pesakit", min_value=0, step=1, value=0)
-        benef = patients
+elif prog == "Ambulans (Standby Event)":
+    crowd = st.number_input("Anggaran crowd program", min_value=0, step=1, value=0)
+    benef = int(crowd * 0.60)
 
-    elif calc_method == "AMAL Water4Life":
-        families = st.number_input("Bilangan keluarga", min_value=0, step=1, value=0)
-        benef = families * 10 * 365
+elif prog == "Amal Doctor — Derma Darah":
+    bags = st.number_input("Jumlah beg darah", min_value=0, step=1, value=0)
+    benef = bags * 3 * five_or_seven(neg)
 
-    # HUMAN & TALENT
-    elif calc_method == "Tadika AMAL":
-        students = st.number_input("Bilangan pelajar", min_value=0, step=1, value=0)
-        benef = students * 200 * 3
+elif prog == "Amal Doctor — Khatan":
+    participants = st.number_input("Jumlah peserta", min_value=0, step=1, value=0)
+    benef = participants * 3
 
-    elif calc_method == "PDS (Pelajar)":
-        students = st.number_input("Bilangan pelajar PDS", min_value=0, step=1, value=0)
-        benef = int(students * 750 * 0.20)
+elif prog == "Amal Doctor — Umum":
+    patients = st.number_input("Jumlah pesakit", min_value=0, step=1, value=0)
+    benef = patients
 
-    # ENTERPRISE
-    elif calc_method == "Qurban (Lembu/Kambing/Unta)":
-        qtype = st.selectbox("Jenis haiwan", ["Lembu","Kambing","Unta"])
-        ekor = st.number_input("Jumlah ekor", min_value=0, step=1, value=0)
-        factor = {"Lembu":500,"Kambing":70,"Unta":600}[qtype]
-        benef = ekor * factor
+elif prog == "AMAL Water4Life":
+    families = st.number_input("Bilangan keluarga", min_value=0, step=1, value=0)
+    benef = families * 10 * 365
 
-    else:  # Manual / default
-        benef = st.number_input("Bilangan Penerima Manfaat (manual)", min_value=0, step=1, value=0)
+# H&T
+elif prog == "Tadika AMAL":
+    students = st.number_input("Bilangan pelajar", min_value=0, step=1, value=0)
+    benef = students * 200 * 3
 
-    st.info(f"📊 Benefisiari dikira: **{int(benef):,}**")
+elif prog == "PDS (Pelajar)":
+    students = st.number_input("Bilangan pelajar PDS", min_value=0, step=1, value=0)
+    benef = int(students * 750 * 0.20)
 
-    submitted = st.form_submit_button("Hantar / Submit")
+# ENTERPRISE
+elif prog == "Qurban (Lembu/Kambing/Unta)":
+    qtype = st.selectbox("Jenis haiwan", ["Lembu","Kambing","Unta"])
+    ekor  = st.number_input("Jumlah ekor", min_value=0, step=1, value=0)
+    factor = {"Lembu":500,"Kambing":70,"Unta":600}[qtype]
+    benef = ekor * factor
 
-if submitted:
-    if not st.session_state.get("jabatan") or not neg or not st.session_state.get("divisyen"):
-        st.error("Sila pilih Divisyen, Negeri/Pusat dan Jabatan.")
-    elif not st.session_state.get("calc_method"):
-        st.error("Sila pilih Kaedah Pengiraan.")
+else:  # Manual / default
+    benef = st.number_input("Bilangan Penerima Manfaat (manual)", min_value=0, step=1, value=0)
+
+# 6) Live KPI (updates before submit)
+st.metric("Benefisiari dikira", f"{int(benef):,}")
+
+# 7) Submit button (appends to CSV)
+if st.button("Hantar / Submit"):
+    if not lokasi or not aktiviti or not pic:
+        st.error("Sila lengkapkan Lokasi, Aktiviti dan PIC.")
     else:
-        aktiviti = st.session_state.get("Aktiviti") if "Aktiviti" in st.session_state else ""
-        # we already hold aktiviti, pic, lokasi, belanjawan in local vars from the form above
         ensure_csv_with_headers()
         new_row = {
             "Timestamp": datetime.now().isoformat(timespec="seconds"),
-            "Divisyen": st.session_state["divisyen"],
-            "Jabatan": st.session_state["jabatan"],
-            "Negeri/Pusat": st.session_state["negeri"],
+            "Divisyen": div,
+            "Jabatan": jab,
+            "Program (Kaedah)": prog,
+            "Negeri/Pusat": neg,
             "Aktiviti": aktiviti,
-            "PIC": st.session_state.get("PIC", ""),
-            "Lokasi": st.session_state.get("Lokasi", ""),
+            "PIC": pic,
+            "Lokasi": lokasi,
             "Bilangan Penerima Manfaat": int(benef),
-            "Belanjawan yang dikeluarkan": float(st.session_state.get("belanjawan", 0.0)) if "belanjawan" in st.session_state else 0.0,
+            "Belanjawan yang dikeluarkan": float(st.session_state.get("budget", 0.0)),
         }
-        # but to be safe, append using the local variables captured above:
-        new_row.update({
-            "Aktiviti": aktiviti,
-        })
-        # Append using simpler values we still have in scope
-        append_row({
-            "Timestamp": datetime.now().isoformat(timespec="seconds"),
-            "Divisyen": st.session_state["divisyen"],
-            "Jabatan": st.session_state["jabatan"],
-            "Negeri/Pusat": st.session_state["negeri"],
-            "Aktiviti": aktiviti,
-            "PIC": st.session_state.get("PIC",""),
-            "Lokasi": st.session_state.get("Lokasi","") or "",
-            "Bilangan Penerima Manfaat": int(benef),
-            "Belanjawan yang dikeluarkan": float(belanjawan),
-        })
+        append_row(new_row)
         st.success(f"Rekod berjaya dihantar! Benefisiari = {int(benef):,}")
         time.sleep(0.4)
         st.rerun()
