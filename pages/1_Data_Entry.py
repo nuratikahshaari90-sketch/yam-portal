@@ -45,16 +45,16 @@ JABATAN_BY_DIV = {
         "Daie Lapangan",
     ],
     "Enterprise": [
-        "Qurban (Lembu/Kambing/Unta)",+= [
-    "Waqaf Quran",
+        "Qurban (Lembu/Kambing/Unta)",
+        "Waqaf Quran",
     ],
     "Outreach": [
         "Ziarah Mahabbah",
         "Masjid/Surau/Komuniti",
         "Cawangan Negeri",
-        "Pemasaran/Media/Fundraising", += [
-    "Warung Makan Sahabat — Sarapan",
-    "Warung Makan Sahabat — Tengah Hari",
+        "Pemasaran/Media/Fundraising",
+        "Warung Makan Sahabat — Sarapan",
+        "Warung Makan Sahabat — Tengah Hari",
     ],
 }
 
@@ -84,14 +84,17 @@ CALC_CHOICES = {
         "Manual",
     ],
     "Enterprise": [
-        "Qurban (Lembu/Kambing/Unta)", += [
-    "Waqaf Quran",
+        "Qurban (Lembu/Kambing/Unta)",
+        "Waqaf Quran",
         "Manual",
     ],
-    "Outreach": ["Manual"],+= [
-    "Warung Makan Sahabat — Sarapan",
-    "Warung Makan Sahabat — Tengah Hari",
+    "Outreach": [
+        "Warung Makan Sahabat — Sarapan",
+        "Warung Makan Sahabat — Tengah Hari",
+        "Manual",
+    ],
 }
+
 
 # Default calculator by Jabatan (so Program auto-fills when Jabatan changes)
 DEFAULT_METHOD_BY_JAB = {
@@ -102,6 +105,9 @@ DEFAULT_METHOD_BY_JAB = {
     "Shelter (Dalam Negara)": "Shelter (Dalam Negara)",
     "Shelter (Luar Negara)": "Shelter (Luar Negara)",
     "Rumah Transit": "Rumah Transit",
+    "Relief (Misi Bantuan Bencana)": "Dapur Rakyat",  # pick a default you prefer
+    "Post-Disaster Rehabilitation": "Manual",
+
     # Humanitarian
     "Ambulans (Kes Biasa)": "Ambulans (Kes Biasa)",
     "Ambulans (Standby Event)": "Ambulans (Standby Event)",
@@ -109,16 +115,28 @@ DEFAULT_METHOD_BY_JAB = {
     "Amal Doctor — Khatan": "Amal Doctor — Khatan",
     "Amal Doctor — Umum": "Amal Doctor — Umum",
     "AMAL Water4Life": "AMAL Water4Life",
+    "Kebajikan": "Manual",
+
     # H&T
     "Tadika AMAL": "Tadika AMAL",
     "PDS (Pelajar)": "PDS (Pelajar)",
+    "TVET / Skills": "Manual",
+    "Pembangunan Wanita/Keluarga/Masyarakat": "Manual",
+    "Daie Lapangan": "Manual",
+
     # Enterprise
     "Qurban (Lembu/Kambing/Unta)": "Qurban (Lembu/Kambing/Unta)",
-    "Waqaf Quran": "Waqaf Quran"
+    "Waqaf Quran": "Waqaf Quran",
+
     # Outreach
-    "Warung Makan Sahabat — Sarapan": "Warung Makan Sahabat — Sarapan"
-    "Warung Makan Sahabat — Tengah Hari": "Warung Makan Sahabat — Tengah Hari"
+    "Ziarah Mahabbah": "Manual",
+    "Masjid/Surau/Komuniti": "Manual",
+    "Cawangan Negeri": "Manual",
+    "Pemasaran/Media/Fundraising": "Manual",
+    "Warung Makan Sahabat — Sarapan": "Warung Makan Sahabat — Sarapan",
+    "Warung Makan Sahabat — Tengah Hari": "Warung Makan Sahabat — Tengah Hari",
 }
+
 
 FIVE_STATES = {"Selangor","Perak","Wilayah Persekutuan Kuala Lumpur","Negeri Sembilan","Melaka","Johor","Pulau Pinang"}
 def five_or_seven(state: str) -> int:
@@ -257,15 +275,16 @@ elif prog == "Qurban (Lembu/Kambing/Unta)":
     
 elif prog == "Waqaf Quran":
     naskhah = st.number_input("Jumlah naskhah Al-Quran", min_value=0, step=1, value=0)
-    benef = naskhah * 6  # setiap naskhah diandaikan 6 penerima manfaat
+    benef = naskhah * 6
+
 # OUTREACH
 elif prog == "Warung Makan Sahabat — Sarapan":
     pek_per_hari = st.number_input("Jumlah pek (per hari)", min_value=0, step=1, value=0)
-    benef = pek_per_hari * 26 * 12  # 26 hari x 12 bulan
-    
+    benef = pek_per_hari * 26 * 12
+
 elif prog == "Warung Makan Sahabat — Tengah Hari":
     pek_per_hari = st.number_input("Jumlah pek (per hari)", min_value=0, step=1, value=0)
-    benef = pek_per_hari * 26 * 12  # 26 hari x 12 bulan
+    benef = pek_per_hari * 26 * 12
     
 else:  # Manual / default
     benef = st.number_input("Bilangan Penerima Manfaat (manual)", min_value=0, step=1, value=0)
