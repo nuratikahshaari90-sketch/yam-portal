@@ -87,7 +87,7 @@ begin
      where s.email in ('farid@yam.test', 'kavitha@yam.test', 'meiling@yam.test', 'supervisor@yam.test', 'hr@yam.test')
        and app_private.day_type_for(s.id, g.d::date) = 'working_day'
        -- days covered by sample leave / trips / special cases below
-       and not (s.email = 'farid@yam.test'   and g.d::date in ('2026-09-10', '2026-09-11', '2026-09-14', '2026-09-15', '2026-09-17', '2026-09-23'))
+       and not (s.email = 'farid@yam.test'   and g.d::date in ('2026-09-10', '2026-09-11', '2026-09-14', '2026-09-15', '2026-09-17', '2026-09-22', '2026-09-23'))
        and not (s.email = 'kavitha@yam.test' and g.d::date in ('2026-09-05', '2026-09-06', '2026-09-16', '2026-09-20'))
        and not (s.email = 'meiling@yam.test' and g.d::date in ('2026-09-21', '2026-09-22', '2026-09-24'))
      order by s.email, g.d
@@ -183,3 +183,44 @@ from (values
   ('33333333-0000-0000-0000-000000000006', '11111111-0000-0000-0000-000000000004', 'paternity', '2026-11-02', '2026-11-06', 'full',
    'Expected due date early November', 'draft', null, null, null, null, null)
 ) v(id, staff_id, leave_type, s, e, portion, reason, status, approver, submitted, decided_by, decided, comment);
+
+-- ---------------------------------------------------------------------
+-- Sample outstation trips
+-- ---------------------------------------------------------------------
+insert into public.trips (id, staff_id, destination, start_date, end_date, purpose, estimated_cost, estimated_cost_notes,
+  status, approver_id, submitted_at, decided_by, decided_at, decision_comment) values
+  ('44444444-0000-0000-0000-000000000001', '11111111-0000-0000-0000-000000000004', 'Kuantan, Pahang', '2026-09-14', '2026-09-17',
+   'Flood relief aid distribution with state volunteers', 900.00, 'Mileage ~500 km return, 3 nights hotel, meals',
+   'approved', '11111111-0000-0000-0000-000000000003', '2026-09-08 10:00+08', '11111111-0000-0000-0000-000000000003', '2026-09-09 09:00+08', 'Approved. Keep receipts.'),
+  ('44444444-0000-0000-0000-000000000002', '11111111-0000-0000-0000-000000000006', 'George Town, Penang', '2026-09-21', '2026-09-22',
+   'Audit of Penang branch donation records', 650.00, 'Flight, 1 night hotel',
+   'approved', null, '2026-09-10 11:00+08', '11111111-0000-0000-0000-000000000001', '2026-09-11 15:00+08', null),
+  ('44444444-0000-0000-0000-000000000003', '11111111-0000-0000-0000-000000000006', 'Ipoh, Perak', '2026-10-13', '2026-10-14',
+   'Donor meeting and site visit', 300.00, null,
+   'pending', null, '2026-09-25 10:00+08', null, null, null),
+  ('44444444-0000-0000-0000-000000000004', '11111111-0000-0000-0000-000000000005', 'Kota Bharu, Kelantan', '2026-10-24', '2026-10-25',
+   'Orphanage support programme', null, null,
+   'changes_requested', '11111111-0000-0000-0000-000000000003', '2026-09-20 09:00+08', '11111111-0000-0000-0000-000000000003',
+   '2026-09-21 10:00+08', 'Please add an estimated cost for transport and accommodation.'),
+  ('44444444-0000-0000-0000-000000000005', '11111111-0000-0000-0000-000000000005', 'Tanah Rata, Cameron Highlands', '2026-10-01', '2026-10-02',
+   'Follow-up visit: water filter maintenance', 250.00, 'Mileage and meals',
+   'pending', '11111111-0000-0000-0000-000000000003', '2026-09-23 09:00+08', null, null, null);
+
+update public.attendance_entries set trip_id = '44444444-0000-0000-0000-000000000001'
+ where staff_id = '11111111-0000-0000-0000-000000000004' and work_mode = 'outstation';
+
+-- Mei Ling in Penang (linked to her approved trip)
+insert into public.attendance_entries (id, staff_id, work_date, work_mode, location, purpose, day_type, trip_id,
+  clock_in_at, clock_in_server_at, clock_out_at, clock_out_server_at, clock_out_note)
+select gen_random_uuid(), '11111111-0000-0000-0000-000000000006', d, 'outstation', 'YAM Penang branch, George Town',
+       'Donation records audit', 'working_day', '44444444-0000-0000-0000-000000000002',
+       (d + time '09:00') at time zone 'Asia/Kuala_Lumpur', (d + time '09:00') at time zone 'Asia/Kuala_Lumpur',
+       (d + time '18:00') at time zone 'Asia/Kuala_Lumpur', (d + time '18:00') at time zone 'Asia/Kuala_Lumpur', 'Audit day complete'
+  from unnest(array[date '2026-09-21', date '2026-09-22']) d;
+
+-- Farid clocked in as Outstation on 22 Sep without an approved trip (alert)
+insert into public.attendance_entries (id, staff_id, work_date, work_mode, location, purpose, day_type,
+  clock_in_at, clock_in_server_at, clock_out_at, clock_out_server_at, clock_out_note) values
+  ('22222222-0000-0000-0000-000000000006', '11111111-0000-0000-0000-000000000004', '2026-09-22', 'outstation',
+   'Seremban, Negeri Sembilan', 'Urgent visit to partner food bank', 'working_day',
+   '2026-09-22 08:30+08', '2026-09-22 08:30+08', '2026-09-22 17:30+08', '2026-09-22 17:30+08', 'Visit done');

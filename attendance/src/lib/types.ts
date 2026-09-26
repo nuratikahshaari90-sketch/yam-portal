@@ -149,6 +149,7 @@ export interface LeaveRequest {
   status: RequestStatus
   approver_id: string | null
   approver_name?: string | null
+  decided_by_name?: string | null
   submitted_at: string | null
   decided_at: string | null
   decided_by: string | null
@@ -169,6 +170,7 @@ export interface Trip {
   status: RequestStatus
   approver_id: string | null
   approver_name?: string | null
+  decided_by_name?: string | null
   submitted_at: string | null
   decided_at: string | null
   decision_comment: string | null

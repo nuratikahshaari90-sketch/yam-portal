@@ -43,3 +43,13 @@ export async function clearMail() {
 // A small real PNG image for upload tests
 import { readFileSync } from 'node:fs'
 export const TINY_PNG = readFileSync(new URL('../public/icons/icon-192.png', import.meta.url))
+
+import { execFileSync } from 'node:child_process'
+/** Run SQL against the LOCAL test database (test setup only). */
+export function sql(query: string): string {
+  return execFileSync('psql', ['-h', '127.0.0.1', '-p', '54322', '-U', 'postgres', '-At', '-c', query], {
+    env: { ...process.env, PGPASSWORD: 'postgres' },
+  })
+    .toString()
+    .trim()
+}

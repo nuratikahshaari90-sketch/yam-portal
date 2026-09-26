@@ -6,6 +6,9 @@ import { dayType } from '../../lib/workdays'
 import type { Trip } from '../../lib/types'
 import { myLeave } from '../leave/api'
 import { myCalendar } from './api'
+import { myTrips } from '../trips/api'
+import { Notice } from '../../components/ui'
+import { formatDateRange } from '../../lib/dates'
 
 /** Map of date -> "Annual Leave" (or "Annual Leave, half day") for approved leave on working days. */
 export function useLeaveDays(staffId: string, from: string, to: string): Map<string, string> {
@@ -33,11 +36,44 @@ export function useLeaveDays(staffId: string, from: string, to: string): Map<str
   return map
 }
 
-export function useTodayContext(staffId: string, date: string, _key: string) {
+export function useTodayContext(staffId: string, date: string, key: string) {
   const leave = useLeaveDays(staffId, date, date)
-  return { leaveToday: leave.get(date) ?? null, tripsToday: [] as Trip[] }
+  const [trips, setTrips] = useState<Trip[]>([])
+  useEffect(() => {
+    let alive = true
+    myTrips(staffId)
+      .then((r) => alive && setTrips(r.data.filter((t) => t.status === 'approved' && t.start_date <= date && t.end_date >= date)))
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [staffId, date, key])
+  return { leaveToday: leave.get(date) ?? null, tripsToday: trips }
 }
 
-export function OutstationPicker(_props: { trips: Trip[]; value: string | null; onChange: (id: string | null) => void }) {
-  return null
+/** Shown when "Outstation" is chosen: link to today's approved trip, or warn. */
+export function OutstationPicker(props: { trips: Trip[]; value: string | null; onChange: (id: string | null) => void }) {
+  const { trips, value, onChange } = props
+  useEffect(() => {
+    if (!value && trips.length > 0) onChange(trips[0].id)
+  }, [trips, value, onChange])
+  if (trips.length === 0)
+    return (
+      <Notice kind="warn">
+        You have no approved outstation trip for today. You can still clock in, but HR will be alerted. Request a trip from
+        Requests if you haven't.
+      </Notice>
+    )
+  return (
+    <div className="field">
+      <label htmlFor="trip">Outstation trip</label>
+      <select id="trip" value={value ?? ''} onChange={(e) => onChange(e.target.value || null)}>
+        {trips.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.destination} ({formatDateRange(t.start_date, t.end_date)})
+          </option>
+        ))}
+      </select>
+    </div>
+  )
 }
