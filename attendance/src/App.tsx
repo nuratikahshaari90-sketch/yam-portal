@@ -13,6 +13,7 @@ import { HistoryScreen } from './features/clock/HistoryScreen'
 import { RequestsPage } from './features/RequestsPage'
 import { TripDetailPage, TripFormPage, TripListPage } from './features/trips/TripPages'
 import { ClaimDetailPage, ClaimFormPage, ClaimListPage } from './features/claims/ClaimPages'
+import { SyncIssuesPage, SyncStatusPage } from './features/SyncPages'
 import { LeaveDetailPage, LeaveFormPage, LeaveListPage } from './features/leave/LeavePages'
 
 function Placeholder({ title }: { title: string }) {
@@ -74,6 +75,8 @@ function Gate() {
       <Route path="/admin/staff/:id" element={<AdminOnly><StaffEditPage /></AdminOnly>} />
       <Route path="/admin/holidays" element={<AdminOnly><HolidaysPage /></AdminOnly>} />
       <Route path="/admin/settings" element={<AdminOnly><SettingsPage /></AdminOnly>} />
+      <Route path="/admin/sync-issues" element={<AdminOnly><SyncIssuesPage /></AdminOnly>} />
+      <Route path="/sync" element={<SyncStatusPage />} />
       <Route path="*" element={<Placeholder title="Coming soon" />} />
     </Routes>
   )

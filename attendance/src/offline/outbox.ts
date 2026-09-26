@@ -104,6 +104,21 @@ export interface SyncResult {
 }
 
 let running: Promise<SyncResult> | null = null
+// Quick retries when the connection has just come back but is not ready yet.
+const RETRY_DELAYS_MS = [2_000, 5_000, 10_000, 20_000]
+let retryIndex = 0
+let retryTimer: ReturnType<typeof setTimeout> | null = null
+function scheduleRetry(failed: boolean) {
+  if (retryTimer) clearTimeout(retryTimer)
+  retryTimer = null
+  if (!failed) {
+    retryIndex = 0
+    return
+  }
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return // the 'online' event will trigger a sync
+  const delay = RETRY_DELAYS_MS[Math.min(retryIndex++, RETRY_DELAYS_MS.length - 1)]
+  retryTimer = setTimeout(() => void syncNow(), delay)
+}
 const listeners = new Set<() => void>()
 let lastSyncAt: number | null = null
 let syncing = false
@@ -171,11 +186,16 @@ export function syncNow(): Promise<SyncResult> {
           result.conflicts++
         }
       }
-      lastSyncAt = Date.now()
+      if (!result.stoppedOffline) lastSyncAt = Date.now()
+      return result
+    } catch (e) {
+      if (!isNetworkError(e)) throw e
+      result.stoppedOffline = true
       return result
     } finally {
       syncing = false
       running = null
+      scheduleRetry(result.stoppedOffline)
       notify()
     }
   })()
@@ -230,7 +250,10 @@ let started = false
 export function startAutoSync() {
   if (started || typeof window === 'undefined') return
   started = true
-  window.addEventListener('online', () => void syncNow())
+  window.addEventListener('online', () => {
+    retryIndex = 0
+    void syncNow()
+  })
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') void syncNow()
   })

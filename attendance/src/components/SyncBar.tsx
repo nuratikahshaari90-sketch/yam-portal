@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useSyncState } from '../offline/useSync'
 import { syncNow } from '../offline/outbox'
 
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
+const plural = (n: number, word: string) => `${n} ${n === 1 ? word : word === 'entry' ? 'entries' : word + 's'}`
 
 export function SyncBar() {
   const { online, pending, conflicts, syncing } = useSyncState()

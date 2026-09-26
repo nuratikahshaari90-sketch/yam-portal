@@ -15,10 +15,19 @@ export default defineConfig({
     timezoneId: 'Asia/Kuala_Lumpur',
     launchOptions: process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {},
   },
-  webServer: {
-    command: 'npx vite --port 5173 --strictPort',
-    url: 'http://localhost:5173',
-    reuseExistingServer: true,
-    timeout: 60_000,
-  },
+  webServer: [
+    {
+      command: 'npx vite --port 5173 --strictPort',
+      url: 'http://localhost:5173',
+      reuseExistingServer: true,
+      timeout: 60_000,
+    },
+    {
+      // The installable production build (with the offline service worker)
+      command: 'npx vite build && npx vite preview --port 4173 --strictPort',
+      url: 'http://localhost:4173',
+      reuseExistingServer: true,
+      timeout: 180_000,
+    },
+  ],
 })
