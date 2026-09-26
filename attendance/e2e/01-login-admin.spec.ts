@@ -64,6 +64,15 @@ test.describe('Stage 1: login, roles, schedules', () => {
     await expect(page.getByLabel('Mileage rate (RM per km)')).toHaveValue('0.6')
     await expect(page.getByLabel('Claims')).toHaveValue('hr')
     await expect(page.getByLabel('Leave requests')).toHaveValue('supervisor')
+    await expect(page.getByLabel('Unpaid break per day (minutes)')).toHaveValue('60')
+    await page.getByLabel('Mileage rate (RM per km)').fill('0.65')
+    await page.getByRole('button', { name: 'Save settings' }).click()
+    await expect(page.getByText('Settings saved')).toBeVisible()
+    await page.reload()
+    await expect(page.getByLabel('Mileage rate (RM per km)')).toHaveValue('0.65')
+    await page.getByLabel('Mileage rate (RM per km)').fill('0.60')
+    await page.getByRole('button', { name: 'Save settings' }).click()
+    await expect(page.getByText('Settings saved')).toBeVisible()
   })
 
   test('unregistered email cannot activate; registered one can, via email link', async ({ page }) => {

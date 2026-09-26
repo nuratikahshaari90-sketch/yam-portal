@@ -250,3 +250,9 @@ insert into public.claim_items (claim_id, item_date, category, description, dist
   ('55555555-0000-0000-0000-000000000002', '2026-09-21', 'accommodation', 'Hotel, 1 night',               null, null, 180.00, 2),
   ('55555555-0000-0000-0000-000000000002', '2026-09-22', 'meals',         'Meals, 2 days',                null, null, 60.00, 3),
   ('55555555-0000-0000-0000-000000000003', '2026-09-22', 'other',         'E-hailing to airport',         null, null, 38.00, 1);
+
+-- HR already reviewed Kavitha's Malaysia Day work
+update public.attendance_entries set review_status = 'approved', reviewed_flags = '{public_holiday}',
+  reviewed_by = '11111111-0000-0000-0000-000000000001', reviewed_at = '2026-09-17 09:00+08',
+  review_comment = 'Approved: Malaysia Day programme'
+ where id = '22222222-0000-0000-0000-000000000003';

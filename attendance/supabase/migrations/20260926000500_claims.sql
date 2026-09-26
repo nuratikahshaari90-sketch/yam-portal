@@ -96,7 +96,7 @@ begin
 
   select * into v_row from public.claims where id = v_id for update;
   if found then
-    if v_row.staff_id <> v_me then raise exception 'Not your claim.'; end if;
+    if v_row.staff_id is distinct from v_me then raise exception 'Not your claim.'; end if;
     if v_row.status <> 'draft' then raise exception 'This claim has already been submitted and can no longer be edited.'; end if;
     update public.claims set trip_id = v_trip, notes = nullif(trim(p->>'notes'), ''), updated_at = now()
      where id = v_id returning * into v_row;
@@ -136,8 +136,9 @@ declare
   v_row  public.claims;
   v_rate numeric := (select mileage_rate_per_km from public.app_settings where id = 1);
 begin
+  if v_me is null then raise exception 'Not signed in.'; end if;
   select * into v_row from public.claims where id = p_id for update;
-  if not found or v_row.staff_id <> v_me then raise exception 'Claim not found.'; end if;
+  if not found or v_row.staff_id is distinct from v_me then raise exception 'Claim not found.'; end if;
   if v_row.status <> 'draft' then raise exception 'This claim was already submitted.'; end if;
   if not exists (select 1 from public.claim_items where claim_id = p_id) then
     raise exception 'Please add at least one item before submitting.';

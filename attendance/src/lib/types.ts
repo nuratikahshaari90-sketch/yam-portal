@@ -36,6 +36,8 @@ export interface Settings {
   missed_clockout_time: string
   max_daily_hours: number
   overtime_threshold_hours: number
+  break_minutes: number
+  overtime_min_minutes: number
   mileage_rate_per_km: number
   route_leave: Route
   route_trip: Route

@@ -95,7 +95,7 @@ begin
   -- Idempotent: the same entry sent twice is only stored once.
   select * into v_row from public.attendance_entries where id = p_id;
   if found then
-    if v_row.staff_id <> v_me then raise exception 'Entry belongs to someone else.'; end if;
+    if v_row.staff_id is distinct from v_me then raise exception 'Entry belongs to someone else.'; end if;
     return v_row;
   end if;
 
@@ -149,7 +149,7 @@ declare
 begin
   if v_me is null then raise exception 'Not signed in.'; end if;
   select * into v_row from public.attendance_entries where id = p_entry_id for update;
-  if not found or v_row.staff_id <> v_me then
+  if not found or v_row.staff_id is distinct from v_me then
     raise exception 'Clock-in record not found.';
   end if;
 

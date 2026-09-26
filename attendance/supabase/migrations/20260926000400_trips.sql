@@ -76,7 +76,7 @@ begin
 
   select * into v_row from public.trips where id = v_id for update;
   if found then
-    if v_row.staff_id <> v_me then raise exception 'Not your trip.'; end if;
+    if v_row.staff_id is distinct from v_me then raise exception 'Not your trip.'; end if;
     if v_row.status not in ('draft', 'changes_requested') then
       raise exception 'This trip request can no longer be edited.';
     end if;
@@ -99,8 +99,9 @@ declare
   v_me  uuid := public.current_staff_id();
   v_row public.trips;
 begin
+  if v_me is null then raise exception 'Not signed in.'; end if;
   select * into v_row from public.trips where id = p_id for update;
-  if not found or v_row.staff_id <> v_me then raise exception 'Trip not found.'; end if;
+  if not found or v_row.staff_id is distinct from v_me then raise exception 'Trip not found.'; end if;
   if v_row.status not in ('draft', 'changes_requested') then raise exception 'This trip was already submitted.'; end if;
   update public.trips set status = 'pending', submitted_at = now(), updated_at = now(),
     -- A resubmission after "changes requested" goes back to the same approver.
@@ -118,6 +119,7 @@ declare
   v_me  uuid := public.current_staff_id();
   v_row public.trips;
 begin
+  if v_me is null then raise exception 'Not signed in.'; end if;
   select * into v_row from public.trips where id = p_id for update;
   if not found then raise exception 'Trip not found.'; end if;
   if v_row.staff_id = v_me and v_row.status = 'draft' then
@@ -165,7 +167,7 @@ begin
 
   select * into v_row from public.attendance_entries where id = p_id;
   if found then
-    if v_row.staff_id <> v_me then raise exception 'Entry belongs to someone else.'; end if;
+    if v_row.staff_id is distinct from v_me then raise exception 'Entry belongs to someone else.'; end if;
     return v_row;
   end if;
 

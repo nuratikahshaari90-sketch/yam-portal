@@ -52,13 +52,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setStaff(null)
       } else {
         setInactive(false)
+        setSyncUser((data as Staff).id) // before any screen reads the offline cache
         setStaff(data as Staff)
         await cacheSet(key, data)
       }
     } catch (e) {
       if (!isNetworkError(e)) throw e
       const cached = await cacheGet<Staff>(key)
-      if (cached) setStaff(cached)
+      if (cached) {
+        setSyncUser(cached.id)
+        setStaff(cached)
+      }
     } finally {
       setLoadingStaff(false)
     }

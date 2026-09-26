@@ -131,7 +131,7 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 14px 0; }
 .field .hint { font-size: 0.88rem; color: var(--muted); margin-top: 4px; }
 .req { color: var(--danger); }
 input[type='text'], input[type='email'], input[type='password'], input[type='number'], input[type='date'],
-input[type='time'], input[type='search'], select, textarea {
+input[type='time'], input[type='search'], input[type='month'], input[type='datetime-local'], select, textarea {
   width: 100%; min-height: 52px; padding: 12px 14px; font: inherit; color: var(--text);
   background: #fff; border: 2px solid var(--border); border-radius: 12px; appearance: none;
 }
@@ -174,10 +174,11 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
 .notice.ok { background: var(--ok-soft); color: #135229; }
 
 /* ---------- Segmented control ---------- */
-.segmented { display: flex; background: #e6ebe9; border-radius: 12px; padding: 4px; margin-bottom: 14px; }
+.segmented { display: flex; background: #e6ebe9; border-radius: 12px; padding: 4px; margin-bottom: 14px; overflow-x: auto; scrollbar-width: none; }
+.segmented::-webkit-scrollbar { display: none; }
 .segmented button {
   flex: 1; min-height: 44px; border: 0; background: transparent; font: inherit; font-weight: 700; color: var(--muted);
-  border-radius: 9px; cursor: pointer;
+  border-radius: 9px; cursor: pointer; white-space: nowrap; padding: 0 12px;
 }
 .segmented button.on { background: #fff; color: var(--brand); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
 
@@ -191,8 +192,11 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 14px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
 table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
 th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
-th { background: #eef2f0; font-weight: 700; position: sticky; top: 0; }
+th { background: #eef2f0; font-weight: 700; white-space: normal; min-width: 64px; max-width: 110px; vertical-align: bottom; line-height: 1.2; }
 td.num, th.num { text-align: right; }
+/* Keep the name column visible while scrolling wide reports sideways */
+th:first-child, td:first-child { position: sticky; left: 0; z-index: 1; background: #fff; box-shadow: 1px 0 0 var(--border); }
+th:first-child { background: #eef2f0; z-index: 2; max-width: none; }
 
 /* ---------- Auth pages ---------- */
 .auth-wrap { min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; padding: 24px 16px; max-width: 460px; margin: 0 auto; }

@@ -7,21 +7,19 @@ import { MorePage } from './features/MorePage'
 import { StaffEditPage, StaffListPage } from './features/admin/StaffPages'
 import { HolidaysPage } from './features/admin/HolidaysPage'
 import { SettingsPage } from './features/admin/SettingsPage'
-import { Layout } from './components/Layout'
 import { ClockScreen } from './features/clock/ClockScreen'
 import { HistoryScreen } from './features/clock/HistoryScreen'
 import { RequestsPage } from './features/RequestsPage'
 import { TripDetailPage, TripFormPage, TripListPage } from './features/trips/TripPages'
 import { ClaimDetailPage, ClaimFormPage, ClaimListPage } from './features/claims/ClaimPages'
 import { SyncIssuesPage, SyncStatusPage } from './features/SyncPages'
+import { ApprovalsPage } from './features/approvals/ApprovalsPage'
+import { ReportsPage } from './features/reports/ReportsPage'
 import { LeaveDetailPage, LeaveFormPage, LeaveListPage } from './features/leave/LeavePages'
 
-function Placeholder({ title }: { title: string }) {
-  return (
-    <Layout title={title}>
-      <p className="muted">Coming in the next stage.</p>
-    </Layout>
-  )
+function ApproverOnly({ children }: { children: ReactNode }) {
+  const { canApprove } = useRole()
+  return canApprove ? children : <Navigate to="/" replace />
 }
 
 function AdminOnly({ children }: { children: ReactNode }) {
@@ -77,7 +75,9 @@ function Gate() {
       <Route path="/admin/settings" element={<AdminOnly><SettingsPage /></AdminOnly>} />
       <Route path="/admin/sync-issues" element={<AdminOnly><SyncIssuesPage /></AdminOnly>} />
       <Route path="/sync" element={<SyncStatusPage />} />
-      <Route path="*" element={<Placeholder title="Coming soon" />} />
+      <Route path="/approvals" element={<ApproverOnly><ApprovalsPage /></ApproverOnly>} />
+      <Route path="/reports" element={<ApproverOnly><ReportsPage /></ApproverOnly>} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }

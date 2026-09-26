@@ -103,7 +103,7 @@ begin
 
   select * into v_row from public.leave_requests where id = v_id for update;
   if found then
-    if v_row.staff_id <> v_me then raise exception 'Not your leave request.'; end if;
+    if v_row.staff_id is distinct from v_me then raise exception 'Not your leave request.'; end if;
     if v_row.status <> 'draft' then raise exception 'This leave request has already been submitted and can no longer be edited.'; end if;
     update public.leave_requests set
       leave_type = p->>'leave_type', start_date = v_from, end_date = v_to, day_portion = v_portion,
@@ -127,8 +127,9 @@ declare
   v_me  uuid := public.current_staff_id();
   v_row public.leave_requests;
 begin
+  if v_me is null then raise exception 'Not signed in.'; end if;
   select * into v_row from public.leave_requests where id = p_id for update;
-  if not found or v_row.staff_id <> v_me then raise exception 'Leave request not found.'; end if;
+  if not found or v_row.staff_id is distinct from v_me then raise exception 'Leave request not found.'; end if;
   if v_row.status <> 'draft' then raise exception 'This leave request was already submitted.'; end if;
 
   v_row.working_days := app_private.leave_days(v_me, v_row.start_date, v_row.end_date, v_row.day_portion);
@@ -157,6 +158,7 @@ declare
   v_me  uuid := public.current_staff_id();
   v_row public.leave_requests;
 begin
+  if v_me is null then raise exception 'Not signed in.'; end if;
   select * into v_row from public.leave_requests where id = p_id for update;
   if not found then raise exception 'Leave request not found.'; end if;
   if v_row.staff_id = v_me and v_row.status = 'draft' then

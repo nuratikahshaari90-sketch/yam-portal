@@ -29,6 +29,8 @@ export default defineConfig({
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/auth\//],
         globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
+        // Report export libraries are large and only needed online by HR: don't pre-download them.
+        globIgnores: ['**/exceljs*', '**/jspdf*', '**/html2canvas*', '**/purify*', '**/index.es-*'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },
     }),

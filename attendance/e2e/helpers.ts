@@ -53,3 +53,8 @@ export function sql(query: string): string {
     .toString()
     .trim()
 }
+
+/** Restore the sample data (local test database only). */
+export function resetDatabase() {
+  execFileSync('npx', ['supabase', 'db', 'reset'], { stdio: 'ignore', timeout: 180_000 })
+}

@@ -34,6 +34,8 @@ export function SettingsPage() {
         missed_clockout_time: s!.missed_clockout_time,
         max_daily_hours: Number(s!.max_daily_hours),
         overtime_threshold_hours: Number(s!.overtime_threshold_hours),
+        break_minutes: Number(s!.break_minutes),
+        overtime_min_minutes: Number(s!.overtime_min_minutes),
         mileage_rate_per_km: Number(s!.mileage_rate_per_km),
         route_leave: s!.route_leave,
         route_trip: s!.route_trip,
@@ -60,6 +62,12 @@ export function SettingsPage() {
           </Field>
           <Field label="Overtime starts after (hours per day)" htmlFor="ot" hint="Hours above this on a working day count as overtime. Default 8 hours.">
             <input id="ot" type="number" step="0.5" min="1" max="24" value={s.overtime_threshold_hours} onChange={(e) => set('overtime_threshold_hours', e.target.value as unknown as number)} />
+          </Field>
+          <Field label="Unpaid break per day (minutes)" htmlFor="brk" hint="Deducted from a day's hours when more than 5 hours are recorded (lunch). Default 60. Use 0 to switch off.">
+            <input id="brk" type="number" step="5" min="0" max="240" value={s.break_minutes} onChange={(e) => set('break_minutes', e.target.value as unknown as number)} />
+          </Field>
+          <Field label="Minimum overtime to count (minutes)" htmlFor="otmin" hint="Smaller amounts of extra time are ignored. Default 30. Use 0 to count every minute.">
+            <input id="otmin" type="number" step="5" min="0" max="240" value={s.overtime_min_minutes} onChange={(e) => set('overtime_min_minutes', e.target.value as unknown as number)} />
           </Field>
         </div>
         <div className="card">
