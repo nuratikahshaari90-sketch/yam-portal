@@ -224,3 +224,29 @@ insert into public.attendance_entries (id, staff_id, work_date, work_mode, locat
   ('22222222-0000-0000-0000-000000000006', '11111111-0000-0000-0000-000000000004', '2026-09-22', 'outstation',
    'Seremban, Negeri Sembilan', 'Urgent visit to partner food bank', 'working_day',
    '2026-09-22 08:30+08', '2026-09-22 08:30+08', '2026-09-22 17:30+08', '2026-09-22 17:30+08', 'Visit done');
+
+-- ---------------------------------------------------------------------
+-- Sample claims
+-- ---------------------------------------------------------------------
+insert into public.claims (id, staff_id, trip_id, notes, status, approver_id, submitted_at, decided_by, decided_at, paid_by, paid_at, payment_ref) values
+  -- Farid: Kuantan trip claim, waiting for HR
+  ('55555555-0000-0000-0000-000000000001', '11111111-0000-0000-0000-000000000004', '44444444-0000-0000-0000-000000000001',
+   'Kuantan flood relief trip', 'submitted', null, '2026-09-18 16:00+08', null, null, null, null, null),
+  -- Mei Ling: Penang trip claim, approved and paid
+  ('55555555-0000-0000-0000-000000000002', '11111111-0000-0000-0000-000000000006', '44444444-0000-0000-0000-000000000002',
+   'Penang audit trip', 'paid', null, '2026-09-23 10:00+08', '11111111-0000-0000-0000-000000000001', '2026-09-23 15:00+08',
+   '11111111-0000-0000-0000-000000000001', '2026-09-25 11:00+08', 'IBG-20260925-0012'),
+  -- Mei Ling: a late e-hailing receipt, still a draft
+  ('55555555-0000-0000-0000-000000000003', '11111111-0000-0000-0000-000000000006', '44444444-0000-0000-0000-000000000002',
+   'Late receipt', 'draft', null, null, null, null, null, null, null);
+
+insert into public.claim_items (claim_id, item_date, category, description, distance_km, rate_per_km, amount, sort_order) values
+  ('55555555-0000-0000-0000-000000000001', '2026-09-14', 'mileage',       'Bangi to Kuantan and return', 520, 0.60, 312.00, 1),
+  ('55555555-0000-0000-0000-000000000001', '2026-09-14', 'toll',          'LPT toll, return trip',        null, null, 45.60, 2),
+  ('55555555-0000-0000-0000-000000000001', '2026-09-14', 'accommodation', 'Hotel, 3 nights',              null, null, 360.00, 3),
+  ('55555555-0000-0000-0000-000000000001', '2026-09-15', 'meals',         'Lunch and dinner',             null, null, 32.50, 4),
+  ('55555555-0000-0000-0000-000000000001', '2026-09-17', 'parking',       'Relief centre parking',        null, null, 12.00, 5),
+  ('55555555-0000-0000-0000-000000000002', '2026-09-21', 'other',         'Return flight KUL-PEN',        null, null, 289.00, 1),
+  ('55555555-0000-0000-0000-000000000002', '2026-09-21', 'accommodation', 'Hotel, 1 night',               null, null, 180.00, 2),
+  ('55555555-0000-0000-0000-000000000002', '2026-09-22', 'meals',         'Meals, 2 days',                null, null, 60.00, 3),
+  ('55555555-0000-0000-0000-000000000003', '2026-09-22', 'other',         'E-hailing to airport',         null, null, 38.00, 1);

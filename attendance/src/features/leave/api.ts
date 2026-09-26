@@ -38,7 +38,7 @@ export async function unsyncedLeaveDrafts(): Promise<LeaveDraft[]> {
 
 /** Save a draft. Works offline: it is queued and synced later. */
 export async function saveLeaveDraft(staffId: string, d: LeaveDraft, file: PickedFile | null) {
-  const files = []
+  const files: { id: string; path: string; blob: Blob; contentType: string; name: string }[] = []
   let payload = { ...d }
   if (file) {
     const path = storagePath(staffId, 'leave', file)

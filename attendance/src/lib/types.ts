@@ -224,5 +224,8 @@ export interface Claim {
   payment_ref: string | null
   total_amount: number
   item_count: number
+  items_without_receipt: number
+  approver_name?: string | null
+  decided_by_name?: string | null
   created_at: string
 }

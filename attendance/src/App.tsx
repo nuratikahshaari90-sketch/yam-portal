@@ -12,6 +12,7 @@ import { ClockScreen } from './features/clock/ClockScreen'
 import { HistoryScreen } from './features/clock/HistoryScreen'
 import { RequestsPage } from './features/RequestsPage'
 import { TripDetailPage, TripFormPage, TripListPage } from './features/trips/TripPages'
+import { ClaimDetailPage, ClaimFormPage, ClaimListPage } from './features/claims/ClaimPages'
 import { LeaveDetailPage, LeaveFormPage, LeaveListPage } from './features/leave/LeavePages'
 
 function Placeholder({ title }: { title: string }) {
@@ -64,6 +65,10 @@ function Gate() {
       <Route path="/trips/new" element={<TripFormPage />} />
       <Route path="/trips/:id/edit" element={<TripFormPage />} />
       <Route path="/trips/:id" element={<TripDetailPage />} />
+      <Route path="/claims" element={<ClaimListPage />} />
+      <Route path="/claims/new" element={<ClaimFormPage />} />
+      <Route path="/claims/:id/edit" element={<ClaimFormPage />} />
+      <Route path="/claims/:id" element={<ClaimDetailPage />} />
       <Route path="/more" element={<MorePage />} />
       <Route path="/admin/staff" element={<AdminOnly><StaffListPage /></AdminOnly>} />
       <Route path="/admin/staff/:id" element={<AdminOnly><StaffEditPage /></AdminOnly>} />
