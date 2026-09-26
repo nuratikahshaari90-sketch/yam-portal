@@ -61,7 +61,8 @@ select isnt((select user_id from staff where email = 'newstaff@yam.test'), null,
 
 -- ---------- Row Level Security: who sees what ----------
 select pg_temp.login('farid@yam.test');
-select is((select count(*)::int from staff), 1, 'Staff see only their own staff record');
+select is((select array_agg(full_name order by full_name) from staff), array['Muhammad Farid Hakim', 'Siti Aminah Yusof'],
+  'Staff see only their own staff record, plus their supervisor''s name');
 select is((select count(*)::int from work_schedules), 1, 'Staff see only their own schedule');
 select ok((select count(*) from public_holidays) > 10, 'Everyone can read the public holiday list');
 select throws_ok($$ insert into public_holidays (holiday_date, name) values ('2026-12-31', 'Fake') $$,
@@ -69,7 +70,7 @@ select throws_ok($$ insert into public_holidays (holiday_date, name) values ('20
 update app_settings set mileage_rate_per_km = 9.99;
 select is((select mileage_rate_per_km from app_settings), 0.60::numeric, 'Staff cannot change settings');
 update staff set role = 'admin' where id = '11111111-0000-0000-0000-000000000004';
-select is((select role::text from staff), 'staff', 'Staff cannot promote themselves');
+select is((select role::text from staff where email = 'farid@yam.test'), 'staff', 'Staff cannot promote themselves');
 select pg_temp.logout();
 
 select pg_temp.login('supervisor@yam.test');

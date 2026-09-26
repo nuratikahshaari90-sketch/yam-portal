@@ -39,3 +39,7 @@ export async function latestEmailLink(to: string, subjectRe: RegExp): Promise<st
 export async function clearMail() {
   await fetch(`${MAILPIT}/api/v1/messages`, { method: 'DELETE' })
 }
+
+// A small real PNG image for upload tests
+import { readFileSync } from 'node:fs'
+export const TINY_PNG = readFileSync(new URL('../public/icons/icon-192.png', import.meta.url))

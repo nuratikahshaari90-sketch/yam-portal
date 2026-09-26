@@ -150,3 +150,36 @@ insert into public.attendance_entries (id, staff_id, work_date, work_mode, locat
   ('22222222-0000-0000-0000-000000000005', '11111111-0000-0000-0000-000000000006', '2026-09-24', 'office',
    'YAM HQ, Bangi', 'Month-end payment processing', 'working_day',
    '2026-09-24 08:50+08', '2026-09-24 08:50+08');
+
+-- ---------------------------------------------------------------------
+-- Sample leave
+-- ---------------------------------------------------------------------
+insert into public.leave_requests (id, staff_id, leave_type, start_date, end_date, day_portion, reason,
+  working_days, status, approver_id, submitted_at, decided_by, decided_at, decision_comment)
+select v.id::uuid, v.staff_id::uuid, v.leave_type, v.s::date, v.e::date, v.portion::public.day_portion, v.reason,
+       app_private.leave_days(v.staff_id::uuid, v.s::date, v.e::date, v.portion::public.day_portion),
+       v.status::public.request_status, v.approver::uuid, v.submitted::timestamptz, v.decided_by::uuid,
+       v.decided::timestamptz, v.comment
+from (values
+  -- Farid: approved annual leave (supervisor Siti approved)
+  ('33333333-0000-0000-0000-000000000001', '11111111-0000-0000-0000-000000000004', 'annual', '2026-09-10', '2026-09-11', 'full',
+   'Family wedding in Melaka', 'approved', '11111111-0000-0000-0000-000000000003', '2026-09-01 10:00+08',
+   '11111111-0000-0000-0000-000000000003', '2026-09-02 09:15+08', 'Enjoy!'),
+  -- Kavitha: hospitalization on her weekend working days (Sat-Sun)
+  ('33333333-0000-0000-0000-000000000002', '11111111-0000-0000-0000-000000000005', 'hospitalization', '2026-09-05', '2026-09-06', 'full',
+   'Admitted for dengue observation', 'approved', '11111111-0000-0000-0000-000000000003', '2026-09-07 08:00+08',
+   '11111111-0000-0000-0000-000000000003', '2026-09-07 11:00+08', 'Get well soon'),
+  -- Kavitha: pending annual leave, Wed 7 to Sun 11 Oct (5 working days on her roster)
+  ('33333333-0000-0000-0000-000000000003', '11111111-0000-0000-0000-000000000005', 'annual', '2026-10-07', '2026-10-11', 'full',
+   'Deepavali preparations at home in Ipoh', 'pending', '11111111-0000-0000-0000-000000000003', '2026-09-24 09:00+08',
+   null, null, null),
+  -- Mei Ling: pending half day (no supervisor, so HR approves)
+  ('33333333-0000-0000-0000-000000000004', '11111111-0000-0000-0000-000000000006', 'annual', '2026-10-05', '2026-10-05', 'half_pm',
+   'Bank appointment', 'pending', null, '2026-09-25 16:00+08', null, null, null),
+  -- Siti (supervisor, no supervisor of her own): pending, goes to HR
+  ('33333333-0000-0000-0000-000000000005', '11111111-0000-0000-0000-000000000003', 'compassionate', '2026-09-29', '2026-09-30', 'full',
+   'Grandmother passed away', 'pending', null, '2026-09-26 07:30+08', null, null, null),
+  -- Farid: a draft he has not submitted yet
+  ('33333333-0000-0000-0000-000000000006', '11111111-0000-0000-0000-000000000004', 'paternity', '2026-11-02', '2026-11-06', 'full',
+   'Expected due date early November', 'draft', null, null, null, null, null)
+) v(id, staff_id, leave_type, s, e, portion, reason, status, approver, submitted, decided_by, decided, comment);
