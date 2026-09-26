@@ -66,3 +66,87 @@ insert into public.public_holidays (holiday_date, name) values
   ('2026-09-16', 'Malaysia Day'),
   ('2026-11-08', 'Deepavali'),
   ('2026-12-25', 'Christmas Day');
+
+-- ---------------------------------------------------------------------
+-- Sample attendance, 1 to 25 September 2026
+-- ---------------------------------------------------------------------
+do $$
+declare
+  r record;
+  v_in timestamptz;
+  v_out timestamptz;
+  v_mode public.work_mode;
+  v_loc text;
+  v_purpose text;
+  n int := 0;
+begin
+  for r in
+    select s.id as staff_id, s.email, g.d::date as d, row_number() over () as k
+      from public.staff s
+      cross join generate_series(date '2026-09-01', date '2026-09-25', interval '1 day') g(d)
+     where s.email in ('farid@yam.test', 'kavitha@yam.test', 'meiling@yam.test', 'supervisor@yam.test', 'hr@yam.test')
+       and app_private.day_type_for(s.id, g.d::date) = 'working_day'
+       -- days covered by sample leave / trips / special cases below
+       and not (s.email = 'farid@yam.test'   and g.d::date in ('2026-09-10', '2026-09-11', '2026-09-14', '2026-09-15', '2026-09-17', '2026-09-23'))
+       and not (s.email = 'kavitha@yam.test' and g.d::date in ('2026-09-05', '2026-09-06', '2026-09-16', '2026-09-20'))
+       and not (s.email = 'meiling@yam.test' and g.d::date in ('2026-09-21', '2026-09-22', '2026-09-24'))
+     order by s.email, g.d
+  loop
+    n := n + 1;
+    v_in  := ((r.d + time '08:30' + ((r.k * 7) % 35) * interval '1 minute') at time zone 'Asia/Kuala_Lumpur');
+    v_out := v_in + interval '8 hours 55 minutes' + ((r.k * 11) % 25) * interval '1 minute';
+    select m, l, p into v_mode, v_loc, v_purpose from (values
+      (0, 'office'::public.work_mode,      'YAM HQ, Bangi',                      'Programme admin and reporting'),
+      (1, 'wfh'::public.work_mode,         'Home, Kajang',                       'Proposal writing'),
+      (2, 'client_site'::public.work_mode, 'Partner NGO office, Putrajaya',      'Beneficiary data verification'),
+      (3, 'office'::public.work_mode,      'YAM HQ, Bangi',                      'Team meeting and planning'),
+      (4, 'training'::public.work_mode,    'Training centre, Shah Alam',         'Volunteer safety training')
+    ) t(i, m, l, p) where t.i = (r.k % 5);
+
+    insert into public.attendance_entries (id, staff_id, work_date, work_mode, location, purpose, day_type,
+      clock_in_at, clock_in_server_at, clock_out_at, clock_out_server_at, clock_out_note)
+    values (gen_random_uuid(), r.staff_id, r.d, v_mode, v_loc, v_purpose, 'working_day',
+      v_in, v_in, v_out, v_out, 'Completed planned tasks');
+  end loop;
+end $$;
+
+-- Farid: outstation in Kuantan (14, 15, 17 Sep; 16 Sep is Malaysia Day)
+insert into public.attendance_entries (id, staff_id, work_date, work_mode, location, purpose, day_type,
+  clock_in_at, clock_in_server_at, clock_out_at, clock_out_server_at, clock_out_note)
+select gen_random_uuid(), '11111111-0000-0000-0000-000000000004', d, 'outstation',
+       'Flood relief centre, Kuantan', 'Flood relief aid distribution', 'working_day',
+       (d + time '08:00') at time zone 'Asia/Kuala_Lumpur', (d + time '08:00') at time zone 'Asia/Kuala_Lumpur',
+       (d + time '17:30') at time zone 'Asia/Kuala_Lumpur', (d + time '17:30') at time zone 'Asia/Kuala_Lumpur',
+       'Distributed food packs'
+  from unnest(array[date '2026-09-14', date '2026-09-15', date '2026-09-17']) d;
+
+insert into public.attendance_entries (id, staff_id, work_date, work_mode, location, purpose, day_type, holiday_name,
+  clock_in_at, clock_in_server_at, clock_out_at, clock_out_server_at, clock_out_note,
+  clock_in_device_at, clock_in_offline, clock_out_device_at, clock_out_offline) values
+  -- Farid works on his off day (Saturday 19 Sep)
+  ('22222222-0000-0000-0000-000000000001', '11111111-0000-0000-0000-000000000004', '2026-09-19', 'client_site',
+   'Masjid Al-Hidayah, Kajang', 'Community iftar logistics', 'off_day', null,
+   '2026-09-19 09:00+08', '2026-09-19 09:00+08', '2026-09-19 14:00+08', '2026-09-19 14:00+08', 'Event completed',
+   null, false, null, false),
+  -- Farid: long day, 11 hours (overtime and over the 10-hour limit)
+  ('22222222-0000-0000-0000-000000000002', '11111111-0000-0000-0000-000000000004', '2026-09-23', 'office',
+   'YAM HQ, Bangi', 'Annual report deadline', 'working_day', null,
+   '2026-09-23 07:30+08', '2026-09-23 07:30+08', '2026-09-23 19:00+08', '2026-09-23 19:00+08', 'Report submitted',
+   null, false, null, false),
+  -- Kavitha works on Malaysia Day (a public holiday, and a working day on her roster)
+  ('22222222-0000-0000-0000-000000000003', '11111111-0000-0000-0000-000000000005', '2026-09-16', 'client_site',
+   'Rumah Kebajikan Seri Kenangan, Cheras', 'Malaysia Day programme', 'public_holiday', 'Malaysia Day',
+   '2026-09-16 08:00+08', '2026-09-16 08:00+08', '2026-09-16 16:00+08', '2026-09-16 16:00+08', 'Programme done',
+   null, false, null, false),
+  -- Kavitha: recorded offline in a rural area, synced later
+  ('22222222-0000-0000-0000-000000000004', '11111111-0000-0000-0000-000000000005', '2026-09-20', 'client_site',
+   'Kampung Orang Asli Sungai Ruil, Cameron Highlands', 'Water filter installation', 'working_day', null,
+   '2026-09-20 08:10+08', '2026-09-20 19:45+08', '2026-09-20 16:40+08', '2026-09-20 19:45+08', 'Installed 12 filters',
+   '2026-09-20 08:10+08', true, '2026-09-20 16:40+08', true);
+
+-- Mei Ling forgot to clock out on 24 Sep
+insert into public.attendance_entries (id, staff_id, work_date, work_mode, location, purpose, day_type,
+  clock_in_at, clock_in_server_at) values
+  ('22222222-0000-0000-0000-000000000005', '11111111-0000-0000-0000-000000000006', '2026-09-24', 'office',
+   'YAM HQ, Bangi', 'Month-end payment processing', 'working_day',
+   '2026-09-24 08:50+08', '2026-09-24 08:50+08');

@@ -107,6 +107,7 @@ export interface AttendanceEntry {
   reviewed_at: string | null
   hours: number | null
   day_hours: number
+  day_overtime_hours: number
   flags: Flag[]
   review_state: 'ok' | 'pending' | 'approved' | 'rejected'
 }

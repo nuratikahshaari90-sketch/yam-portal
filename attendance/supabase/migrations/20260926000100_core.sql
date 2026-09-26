@@ -236,6 +236,10 @@ create table public.app_settings (
   missed_clockout_time     time not null default '23:59',
   max_daily_hours          numeric(4,2) not null default 10 check (max_daily_hours > 0),
   overtime_threshold_hours numeric(4,2) not null default 8 check (overtime_threshold_hours > 0),
+  -- Unpaid break deducted from a day's hours when more than 5 hours were worked.
+  break_minutes            integer not null default 60 check (break_minutes between 0 and 240),
+  -- Overtime below this many minutes in a day is ignored.
+  overtime_min_minutes     integer not null default 30 check (overtime_min_minutes between 0 and 240),
   mileage_rate_per_km      numeric(6,2) not null default 0.60 check (mileage_rate_per_km >= 0),
   -- Who approves each kind of request: the staff member's supervisor
   -- (falling back to HR when none is assigned) or always HR/Admin.

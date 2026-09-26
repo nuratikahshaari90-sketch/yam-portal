@@ -8,6 +8,8 @@ import { StaffEditPage, StaffListPage } from './features/admin/StaffPages'
 import { HolidaysPage } from './features/admin/HolidaysPage'
 import { SettingsPage } from './features/admin/SettingsPage'
 import { Layout } from './components/Layout'
+import { ClockScreen } from './features/clock/ClockScreen'
+import { HistoryScreen } from './features/clock/HistoryScreen'
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -48,7 +50,8 @@ function Gate() {
 
   return (
     <Routes>
-      <Route path="/" element={<Placeholder title="Clock" />} />
+      <Route path="/" element={<ClockScreen />} />
+      <Route path="/history" element={<HistoryScreen />} />
       <Route path="/more" element={<MorePage />} />
       <Route path="/admin/staff" element={<AdminOnly><StaffListPage /></AdminOnly>} />
       <Route path="/admin/staff/:id" element={<AdminOnly><StaffEditPage /></AdminOnly>} />
