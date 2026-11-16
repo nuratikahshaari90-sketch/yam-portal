@@ -1,0 +1,46 @@
+{
+  "name": "yam-staff-attendance",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:db": "supabase test db",
+    "test:e2e": "playwright test",
+    "test:all": "./scripts/test-all.sh",
+    "db:start": "supabase start -x vector,imgproxy,studio,postgres-meta,realtime,supavisor",
+    "db:reset": "supabase db reset",
+    "deploy-sql": "./scripts/build-deploy-sql.sh"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
+    "dexie": "^4.4.6",
+    "exceljs": "^4.4.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "fake-indexeddb": "^6.2.5",
+    "oxlint": "^1.81.0",
+    "supabase": "^2.118.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0",
+    "vite-plugin-pwa": "^1.3.0",
+    "vitest": "^5.0.2"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
+  }
+}

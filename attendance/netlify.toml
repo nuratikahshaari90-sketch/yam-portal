@@ -1,0 +1,29 @@
+# Netlify hosting settings (used when the site's "Base directory" is set to "attendance")
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Every page address loads the app (it handles its own screens)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Always check for app updates
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
